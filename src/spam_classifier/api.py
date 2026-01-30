@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from .predict import load_artifacts, predict_batch, predict_text
 from .service_state import Stats
 
-setup_logging(app_name="spam_classifier_api")
+setup_logging(app_name="spam_classifier", log_file="spam_classifier_api.log", always_to_file=True)
 logger = logging.getLogger(__name__)
 
 load_dotenv()

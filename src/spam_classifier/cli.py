@@ -13,7 +13,7 @@ from .evaluate import run_evaluation
 logger = logging.getLogger(__name__)
 
 def main():
-    setup_logging(app_name="spam_classifier")
+    setup_logging(app_name="spam_classifier", log_file="spam_classifier_cli.log", always_to_file=True)
     logger.info("CLI started")
     p = argparse.ArgumentParser()
     sub = p.add_subparsers(dest="cmd", required=True)

@@ -1,25 +1,29 @@
 from __future__ import annotations
 
 import logging
-import os
+
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+import os
 
 
-def setup_logging(app_name: str = "spam_classifier") -> None:
+def setup_logging(app_name: str, log_file: str | None = None, always_to_file: bool = True) -> None:
     """
-    Sets up consistent logging for CLI + API.
-    - Console logs always
-    - File logs (rotating) if LOG_TO_FILE=1
+    Consistent logging for CLI + API.
+
+    - Always logs to console
+    - Logs to a rotating file by default (always_to_file=True)
+    - Uses different log files for CLI vs API
     """
     level = os.getenv("LOG_LEVEL", "INFO").upper()
-    log_to_file = os.getenv("LOG_TO_FILE", "0") == "1"
+    logs_dir = Path("logs")
+    logs_dir.mkdir(exist_ok=True)
 
     logger = logging.getLogger()
     logger.setLevel(level)
 
-    # Avoid duplicate handlers when uvicorn reloads
-    if logger.handlers:
+    # Prevent duplicate handlers (common with uvicorn reload / repeated imports)
+    if getattr(logger, "_configured_by_app", False):
         return
 
     fmt = logging.Formatter(
@@ -27,17 +31,23 @@ def setup_logging(app_name: str = "spam_classifier") -> None:
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
+    # Console handler
     console = logging.StreamHandler()
     console.setFormatter(fmt)
     logger.addHandler(console)
 
-    if log_to_file:
-        logs_dir = Path("logs")
-        logs_dir.mkdir(exist_ok=True)
+    # File handler
+    if always_to_file:
+        if not log_file:
+            log_file = f"{app_name}.log"
+
         fh = RotatingFileHandler(
-            filename=str(logs_dir / f"{app_name}.log"),
+            filename=str(logs_dir / log_file),
             maxBytes=2_000_000,
             backupCount=3,
         )
         fh.setFormatter(fmt)
         logger.addHandler(fh)
+
+    # Mark configured
+    logger._configured_by_app = True
